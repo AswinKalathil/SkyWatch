@@ -59,7 +59,7 @@ a{color:var(--ac2)}
 <div class="act" id="quick" style="margin:0 0 4px"><button data-q="night">Tonight</button><button data-q="week">This week</button><button data-q="month">This month</button><button data-q="7">Next 7 days</button></div><div class="row"><div><label for="d0">From</label><input id="d0" type="date"></div><div><label for="d1">To</label><input id="d1" type="date"></div></div><p class="note">Satellite passes are calculated for up to 7 days from the start date, because orbit data ages quickly. Meteor showers and moon phases cover the whole range, up to a year.</p></section>
 <section><h2>Satellite orbit data (TLE)</h2>
 <p class="note" style="margin-top:0">Paste current TLEs so passes are accurate. Get them from CelesTrak: <a target="_blank" rel="noopener" href="https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&amp;FORMAT=tle">bright satellites</a> and <a target="_blank" rel="noopener" href="https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&amp;FORMAT=tle">Starlink</a> (open, select all, copy). Data older than ~2 weeks gives wrong times.</p>
-<textarea id="tle" placeholder="ISS (ZARYA)&#10;1 25544U ...&#10;2 25544 ..." spellcheck="false"></textarea></section>
+<textarea id="tle" placeholder="ISS (ZARYA)&#10;1 25544U ...&#10;2 25544 ..." spellcheck="false"></textarea><div class="act"><button id="ftle" type="button">Fetch latest orbit data</button></div><p class="note" id="tsrc"></p></section>
 <button class="pri" id="go">Find events</button>
 </div>
 <main><p id="status">Enter a location, paste TLEs for satellite passes, then choose Find events.</p><p class="note" id="srcs"></p><div id="out"></div>
@@ -121,10 +121,10 @@ function sunVec(d){
 const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],nrm=a=>Math.hypot(a[0],a[1],a[2]);
 function stdMag(n){const u=n.toUpperCase();for(const k in STD)if(u.includes(k))return STD[k];return 3.5}
 async function sats(evs,lat,lon){
- const all=parseTLE(S.tle);
- if(!all.length){return 'No TLE data pasted, so satellite passes were skipped.'}
+ const all=parseTLE(S.tle.trim()?S.tle:TLEW);
+ if(!all.length){return 'No orbit data. Press Fetch latest orbit data or paste TLEs, so satellite passes were skipped.'}
  
- const stars=all.filter(s=>/STARLINK/i.test(s.name)).slice(0,300),maj=all.filter(s=>!/STARLINK/i.test(s.name));
+ const stars=all.filter(s=>/STARLINK/i.test(s.name)).sort((x,y)=>(+y.rec.satnum)-(+x.rec.satnum)).slice(0,300),maj=all.filter(s=>!/STARLINK/i.test(s.name));
  const list=[...(S.types.sat?maj:[]),...(S.types.star?stars:[])];
  if(!list.length)return '';
  const obs={latitude:lat*D,longitude:lon*D,height:0.05},oe=satellite.geodeticToEcf(obs),t0=W.a,G=[];STEP=(W.b-W.a>3*864e5)?30:20;const N=Math.floor(Math.min(W.b-W.a,7*864e5)/1000/STEP);
@@ -243,9 +243,9 @@ async function run(){
   if(!r.ok)throw 0;const j=await r.json();CL={t0:Date.parse(j.hourly.time[0]+'Z'),v:j.hourly.cloud_cover};note+='Cloud: live hourly forecast (Open-Meteo). '}
   catch(e){note+='Live cloud forecast is blocked or unavailable in this view, so your manual cloud value was used. '}}
  if(b-a>7*864e5)note+='Satellite passes cover the first 7 days only. ';
- try{note+=await sats(evs,lat,lon);extras(evs,lat,lon);note+=await astroEv(evs,lat,lon);if(CH)note+=' '+CH+' satellite pass(es) hidden by cloud.'}catch(e){note+='Something went wrong: '+e.message}
+ try{if(!S.tle.trim()){try{await getTLE()}catch(e){note+='Could not fetch orbit data (blocked or offline); paste TLEs instead. '}tsUp()}note+=await sats(evs,lat,lon);extras(evs,lat,lon);note+=await astroEv(evs,lat,lon);if(CH)note+=' '+CH+' satellite pass(es) hidden by cloud.'}catch(e){note+='Something went wrong: '+e.message}
  evs.sort((a,b)=>a.start-b.start);EV=evs;render();
- $('#srcs').textContent='Data sources – Cloud: '+(S.tCloud?(CL?'web forecast (Open-Meteo)':'manual value, no web forecast'):'filter off')+'. Light pollution: '+(S.tLP?(BSRC==='preset'?'city preset estimate, not web-fetched':'manual Bortle class'):'filter off')+'. Orbits: '+(S.tle.trim()?'TLE you pasted':'none')+'. Sun, Moon, planets, eclipses and passes: calculated on your device. Meteor peak dates: built-in table.';
+ $('#srcs').textContent='Data sources – Cloud: '+(S.tCloud?(CL?'web forecast (Open-Meteo)':'manual value, no web forecast'):'filter off')+'. Light pollution: '+(S.tLP?(BSRC==='preset'?'city preset estimate, not web-fetched':'manual Bortle class'):'filter off')+'. Orbits: '+(S.tle.trim()?'TLE you pasted':TLEW?'web (CelesTrak)':'none')+'. Sun, Moon, planets, eclipses and passes: calculated on your device. Meteor peak dates: built-in table.';
  msg((evs.length?evs.length+' events found. ':'No events match your filters. ')+note);$('#go').disabled=false;
 }
 const iso=t=>new Date(t).toISOString().replace(/[-:]|\.\d{3}/g,'');
@@ -285,5 +285,20 @@ document.querySelectorAll('#side section').forEach((sec,i)=>{const h=sec.querySe
  const t=h.textContent,b=document.createElement('button'),a=document.createElement('span'),c=document.createElement('span');b.type='button';b.className='ch';b.setAttribute('aria-controls',body.id);a.textContent=t;b.append(a,c);h.textContent='';h.appendChild(b);
  const set=x=>{body.hidden=x;b.setAttribute('aria-expanded',String(!x));c.textContent=x?'Open ▸':'Close ▾';S.col[i]=x;save()};
  b.onclick=()=>set(!body.hidden);set(!!S.col[i])});
-$('#go').onclick=run;init();
+let TLEW='',TLET=0;
+try{const c=JSON.parse(localStorage.getItem('skytle')||'null');if(c&&c.txt){TLEW=c.txt;TLET=c.t}}catch(e){}
+function tsUp(){$('#tsrc').textContent=S.tle.trim()?'Using the TLE you pasted.':TLEW?'Using web data from CelesTrak, fetched '+new Date(TLET).toLocaleString()+'.':'No orbit data yet. Press Fetch or paste TLEs.'}
+async function getTLE(){
+ if(TLEW&&Date.now()-TLET<72e5)return 'cached';
+ const g=async gr=>{const c=new AbortController(),to=setTimeout(()=>c.abort(),20000);try{const r=await fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP='+gr+'&FORMAT=tle',{signal:c.signal});if(!r.ok)throw new Error('http '+r.status);return await r.text()}finally{clearTimeout(to)}};
+ const [v,s]=await Promise.all([g('visual'),g('starlink')]);
+ const L=s.split(/\r?\n/).map(x=>x.trimEnd()).filter(Boolean),G=[];for(let i=0;i+2<L.length;i+=3)G.push(L.slice(i,i+3));
+ G.sort((a,b)=>b[1].slice(2,7)-a[1].slice(2,7));
+ TLEW=v.trim()+'\n'+G.slice(0,400).map(x=>x.join('\n')).join('\n');TLET=Date.now();
+ try{localStorage.setItem('skytle',JSON.stringify({t:TLET,txt:TLEW}))}catch(e){}
+ return 'fetched';
+}
+$('#ftle').onclick=async()=>{msg('Fetching orbit data…');try{const r=await getTLE();tsUp();msg(r==='cached'?'Orbit data is already fresh (fetched under 2 hours ago).':'Orbit data fetched.')}catch(e){$('#tsrc').textContent='Could not fetch orbit data (blocked or offline). Paste TLEs instead.';msg('Orbit fetch failed.')}};
+$('#tle').addEventListener('input',tsUp);
+$('#go').onclick=run;init();tsUp();
 </script></body></html>
