@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skywatch – night sky events</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🛰️%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#eef1f8;--pn:#fff;--tx:#141b30;--mu:#5a6482;--ln:#d5dbea;--ac:#b86b00;--ac2:#2d4fd0;--ok:#157a4a;--bad:#b3261e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1222;--pn:#151d34;--tx:#e8ecf8;--mu:#97a2c4;--ln:#27324f;--ac:#f2b84b;--ac2:#8fa8ff;--ok:#5fd39a;--bad:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1222;--pn:#151d34;--tx:#e8ecf8;--mu:#97a2c4;--ln:#27324f;--ac:#f2b84b;--ac2:#8fa8ff;--ok:#5fd39a;--bad:#ff8a80;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 16px 4px;max-width:1200px;margin:auto}
+h1{font:700 1.7rem/1.1 Georgia,"Times New Roman",serif;margin:0;letter-spacing:.01em}
+header p{margin:6px 0 0;color:var(--mu);max-width:60ch}
+.wrap{display:grid;gap:16px;padding:16px;max-width:1200px;margin:auto}
+@media(min-width:900px){.wrap{grid-template-columns:360px 1fr;align-items:start}#side{position:sticky;top:12px}}
+section{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{font-size:1rem;margin:0 0 10px}
+label{display:block;font-size:.85rem;color:var(--mu);margin:8px 0 3px}
+input[type=number],input[type=date],input[type=text],select,textarea{width:100%;padding:9px;border-radius:8px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:90px;font:12px/1.3 ui-monospace,Menlo,monospace}
+.row{display:flex;gap:8px}.row>*{flex:1}
+button,.btn{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);padding:8px 12px;text-decoration:none;display:inline-block;min-height:40px}
+button.pri{background:var(--ac);color:#111;border-color:var(--ac);font-weight:700;width:100%;margin-top:10px}
+:focus-visible{outline:3px solid var(--ac2);outline-offset:2px}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--ln)}
+.sw:first-of-type{border-top:0}.sw b{display:block;font-size:.95rem}.sw small{color:var(--mu)}
+.sw input{width:46px;height:26px;accent-color:var(--ac);flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips label{margin:0;display:flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:20px;padding:6px 12px;color:var(--tx);font-size:.9rem}
+.ev{border-left:4px solid var(--ac2)}.ev.sat{border-left-color:var(--ac)}.ev.star{border-left-color:#c05cd6}.ev.met{border-left-color:var(--ok)}.ev.conj{border-left-color:#e0645c}.ev.ecl{border-left-color:#d4a017}
+.ev h3{margin:0;font-size:1.05rem}.when{color:var(--mu);font-size:.9rem;margin:2px 0 6px}
+.bd{display:inline-block;font-size:.78rem;border:1px solid var(--ln);border-radius:6px;padding:1px 7px;margin:0 4px 4px 0;color:var(--mu)}
+.bd.g{color:var(--ok);border-color:var(--ok)}.bd.b{color:var(--bad);border-color:var(--bad)}
+.act{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.act .btn,.act button{font-size:.88rem;min-height:38px}
+#status{color:var(--mu);margin:0 0 10px}.note{font-size:.8rem;color:var(--mu);margin:8px 0 0}
+.ch{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:0;padding:0;font:inherit;font-weight:700;min-height:32px;text-align:left;color:var(--tx)}.ch span+span{color:var(--mu);font-size:.9rem}
+a{color:var(--ac2)}
+</style></head><body>
+<header><h1>Skywatch</h1><p>Satellite passes, Starlink trains, meteor showers and moon phases for your location, filtered by darkness, cloud and light pollution.</p></header>
+<div class="wrap">
+<div id="side">
+<section><h2>Location</h2>
+<div class="row"><div><label for="lat">Latitude</label><input id="lat" type="number" step="any" min="-90" max="90" inputmode="decimal"></div>
+<div><label for="lon">Longitude</label><input id="lon" type="number" step="any" min="-180" max="180" inputmode="decimal"></div></div>
+<button id="gps" style="margin-top:10px;width:100%">Use my current location</button><label for="paste">Or paste coordinates</label><input id="paste" type="text" autocomplete="off" placeholder="latitude, longitude"><label for="city">Or pick a city</label><select id="city"><option value="">Choose a city…</option></select><p class="note" id="locmsg">Tip: in Google Maps, long-press a spot and copy the coordinates shown, then paste them above.</p></section>
+<section><h2>Visibility filters</h2>
+<div class="sw"><div><b>Sunlight</b><small>Sky dark (sun below −6°) and satellite lit by the sun</small></div><input type="checkbox" id="tSun" aria-label="Sunlight filter"></div>
+<div class="sw"><div><b>Cloud cover</b><small>Hide satellite passes when cloud is above your limit</small></div><input type="checkbox" id="tCloud" aria-label="Cloud filter"></div>
+<label for="cloud">Manual cloud cover (used if no live forecast): <span id="cv"></span>%</label><input id="cloud" type="range" min="0" max="100" step="5" style="width:100%">
+<label for="thr">Hide events when cloud is above: <span id="tv"></span>%</label><input id="thr" type="range" min="0" max="100" step="5" style="width:100%">
+<div class="sw"><div><b>Light pollution</b><small>Hide objects fainter than your sky allows</small></div><input type="checkbox" id="tLP" aria-label="Light pollution filter"></div>
+<label for="bortle">Sky darkness (Bortle class): <span id="bsrc">manual</span></label>
+<select id="bortle"><option value="1">1 – Excellent dark sky</option><option value="2">2 – Truly dark</option><option value="3">3 – Rural</option><option value="4">4 – Rural/suburban</option><option value="5">5 – Suburban</option><option value="6">6 – Bright suburban</option><option value="7">7 – Suburban/urban</option><option value="8">8 – City</option><option value="9">9 – Inner city</option></select>
+<p class="note">Cloud: hourly forecast is fetched from Open-Meteo (up to 16 days) when this page is allowed to reach the internet; otherwise your manual value is used. Light pollution can’t be looked up automatically: check your spot on <a target="_blank" rel="noopener" href="https://www.lightpollutionmap.info/">lightpollutionmap.info</a> and pick the matching Bortle class.</p></section>
+<section><h2>Events</h2><div class="chips">
+<label><input type="checkbox" data-t="sat"> Bright satellites</label><label><input type="checkbox" data-t="star"> Starlink trains</label>
+<label><input type="checkbox" data-t="met"> Meteor showers</label><label><input type="checkbox" data-t="moon"> Moon phases</label><label><input type="checkbox" data-t="conj"> Conjunctions &amp; occultations</label><label><input type="checkbox" data-t="ecl"> Eclipses</label></div><p class="note">Planet and eclipse events are calculated for your location. A 7x50 binocular shows about 7° of sky, so pairs closer than 3.5° fit in one view.</p><label for="gap">Starlink train: satellites no more than <span id="gv"></span> s apart</label><input id="gap" type="range" min="20" max="120" step="5" style="width:100%"><p class="note">A train is 4+ Starlink satellites from the same launch (same orbit plane) following each other closely across the sky. Lower the spacing for tighter trains. Timing is accurate to about one calculation step (20–30 s).</p>
+<div class="act" id="quick" style="margin:0 0 4px"><button data-q="night">Tonight</button><button data-q="week">This week</button><button data-q="month">This month</button><button data-q="7">Next 7 days</button></div><div class="row"><div><label for="d0">From</label><input id="d0" type="date"></div><div><label for="d1">To</label><input id="d1" type="date"></div></div><p class="note">Satellite passes are calculated for up to 7 days from the start date, because orbit data ages quickly. Meteor showers and moon phases cover the whole range, up to a year.</p></section>
+<section><h2>Satellite orbit data (TLE)</h2>
+<p class="note" style="margin-top:0">Paste current TLEs so passes are accurate. Get them from CelesTrak: <a target="_blank" rel="noopener" href="https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&amp;FORMAT=tle">bright satellites</a> and <a target="_blank" rel="noopener" href="https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&amp;FORMAT=tle">Starlink</a> (open, select all, copy). Data older than ~2 weeks gives wrong times.</p>
+<textarea id="tle" placeholder="ISS (ZARYA)&#10;1 25544U ...&#10;2 25544 ..." spellcheck="false"></textarea></section>
+<button class="pri" id="go">Find events</button>
+</div>
+<main><p id="status">Enter a location, paste TLEs for satellite passes, then choose Find events.</p><p class="note" id="srcs"></p><div id="out"></div>
+<div class="act" id="bulk" hidden><button id="csv">Export all as CSV (Google Calendar import)</button></div></main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/satellite.js@5.0.0/dist/satellite.min.js"></script>
+<script>
+let STEP=20;const $=s=>document.querySelector(s),D=Math.PI/180;
+const S={lat:'',lon:'',tle:'',tSun:true,tCloud:true,tLP:true,cloud:20,thr:50,bortle:5,gap:45,d0:'',d1:'',types:{sat:true,star:true,met:true,moon:true}};
+try{Object.assign(S,JSON.parse(localStorage.getItem('skywatch')||'{}'))}catch(e){}S.types=Object.assign({conj:true,ecl:true},S.types);
+const LIM=[0,7.6,7.1,6.6,6.2,5.6,5.1,4.6,4.3,4.0];
+const STD={ISS:-1.8,ZARYA:-1.8,CSS:-0.5,TIANHE:-0.5,HST:2.2,STARLINK:4.5};
+const SH=[["Quadrantids",0,3,80],["Lyrids",3,22,18],["Eta Aquariids",4,6,50],["Perseids",7,12,100],["Orionids",9,21,20],["Leonids",10,17,15],["Geminids",11,14,150],["Ursids",11,22,10]];
+let EV=[],CL=null,CH=0,W={a:0,b:0};
+const cloudAt=t=>{if(!S.tCloud)return null;if(CL){const i=Math.round((t-CL.t0)/3600000);if(i>=0&&i<CL.v.length&&CL.v[i]!=null)return CL.v[i]}return S.cloud};
+let BSRC='manual';const isWeb=t=>{if(!CL)return false;const i=Math.round((t-CL.t0)/3600000);return i>=0&&i<CL.v.length&&CL.v[i]!=null};
+const cb=(c,t)=>c==null?[]:[[c>S.thr?'b':'g','Cloud '+Math.round(c)+'% · '+(isWeb(t)?'web':'manual')]];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dirs=["N","NE","E","SE","S","SW","W","NW"],dir=a=>dirs[Math.round(((a%360)+360)%360/45)%8];
+const fT=t=>new Date(t).toLocaleString([],{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const fE=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+function save(){try{localStorage.setItem('skywatch',JSON.stringify(S))}catch(e){}}
+function init(){
+ $('#lat').value=S.lat;$('#lon').value=S.lon;$('#tle').value=S.tle;$('#cloud').value=S.cloud;$('#thr').value=S.thr;$('#bortle').value=S.bortle;$('#gap').value=S.gap;$('#gv').textContent=S.gap;{const t=new Date(),f=x=>x.toLocaleDateString('sv');if(!S.d0||S.d0<f(t))S.d0=f(t);if(!S.d1||S.d1<S.d0)S.d1=f(new Date(+t+2*864e5));$('#d0').value=S.d0;$('#d1').value=S.d1}
+ ['tSun','tCloud','tLP'].forEach(k=>$('#'+k).checked=S[k]);
+ document.querySelectorAll('[data-t]').forEach(e=>e.checked=S.types[e.dataset.t]);
+ $('#cv').textContent=S.cloud;$('#tv').textContent=S.thr;
+}
+function read(){
+ S.lat=$('#lat').value;S.lon=$('#lon').value;S.tle=$('#tle').value;S.cloud=+$('#cloud').value;S.thr=+$('#thr').value;S.bortle=+$('#bortle').value;S.d0=$('#d0').value;S.d1=$('#d1').value;S.gap=+$('#gap').value;$('#gv').textContent=S.gap;
+ ['tSun','tCloud','tLP'].forEach(k=>S[k]=$('#'+k).checked);
+ document.querySelectorAll('[data-t]').forEach(e=>S.types[e.dataset.t]=e.checked);
+ $('#cv').textContent=S.cloud;$('#tv').textContent=S.thr;save();
+}
+document.addEventListener('input',read);
+$('#gps').onclick=()=>{
+ if(!navigator.geolocation)return msg('Location isn’t available in this view. Pick a city or paste coordinates below.');
+ navigator.geolocation.getCurrentPosition(p=>{$('#lat').value=p.coords.latitude.toFixed(4);$('#lon').value=p.coords.longitude.toFixed(4);read();lm('Location set.')},er=>lm(er.code===1?'Location is blocked: either you declined it, or this embedded view isn’t allowed to ask. Open the page in its own browser tab and allow location, or pick a city / paste coordinates.':'Couldn’t get a location fix. Pick a city or paste coordinates instead.'),{timeout:20000,maximumAge:600000});
+};
+function msg(t){$('#status').textContent=t}
+function parseTLE(txt){
+ const L=txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean),out=[];
+ for(let i=0;i<L.length-1;i++){
+  if(L[i].startsWith('1 ')&&L[i+1].startsWith('2 ')){
+   const nm=(i>0&&!L[i-1].startsWith('1 ')&&!L[i-1].startsWith('2 '))?L[i-1].replace(/^0 /,''):'SAT '+L[i].slice(2,7);
+   try{out.push({name:nm,rec:satellite.twoline2satrec(L[i],L[i+1])})}catch(e){}
+   i++;
+  }
+ }
+ return out;
+}
+function sunVec(d){
+ const n=d/86400000+2440587.5-2451545,L=(280.46+0.9856474*n)*D,g=(357.528+0.9856474*n)*D,
+ lam=L+(1.915*Math.sin(g)+0.02*Math.sin(2*g))*D,ep=(23.439-4e-7*n)*D;
+ return[Math.cos(lam),Math.cos(ep)*Math.sin(lam),Math.sin(ep)*Math.sin(lam)];
+}
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],nrm=a=>Math.hypot(a[0],a[1],a[2]);
+function stdMag(n){const u=n.toUpperCase();for(const k in STD)if(u.includes(k))return STD[k];return 3.5}
+async function sats(evs,lat,lon){
+ const all=parseTLE(S.tle);
+ if(!all.length){return 'No TLE data pasted, so satellite passes were skipped.'}
+ 
+ const stars=all.filter(s=>/STARLINK/i.test(s.name)).slice(0,300),maj=all.filter(s=>!/STARLINK/i.test(s.name));
+ const list=[...(S.types.sat?maj:[]),...(S.types.star?stars:[])];
+ if(!list.length)return '';
+ const obs={latitude:lat*D,longitude:lon*D,height:0.05},oe=satellite.geodeticToEcf(obs),t0=W.a,G=[];STEP=(W.b-W.a>3*864e5)?30:20;const N=Math.floor(Math.min(W.b-W.a,7*864e5)/1000/STEP);
+ for(let i=0;i<N;i++){const d=new Date(t0+i*STEP*1000),gm=satellite.gstime(d),c=Math.cos(gm),s=Math.sin(gm);
+  G.push({t:+d,d,gm,sa:SunCalc.getPosition(d,lat,lon).altitude/D,sun:sunVec(+d),o:[oe.x*c-oe.y*s,oe.x*s+oe.y*c,oe.z]})}
+ const passes=[],ok=m=>(!S.tSun||(m.dark&&m.lit))&&(!S.tLP||(m.lit&&m.mag<=LIM[S.bortle]));
+ let k=0;
+ for(const sat of list){
+  if(++k%8==0){msg('Calculating satellite passes… '+Math.round(k/list.length*100)+'%');await new Promise(r=>setTimeout(r))}
+  const std=stdMag(sat.name);let cur=null;
+  const end=()=>{if(cur&&cur.best)passes.push(cur);cur=null};
+  for(const g of G){
+   if(S.tSun&&g.sa>-6){end();continue}
+   const pv=satellite.propagate(sat.rec,g.d);
+   if(!pv.position||typeof pv.position!=='object'){end();continue}
+   const la=satellite.ecfToLookAngles(obs,satellite.eciToEcf(pv.position,g.gm)),el=la.elevation/D;
+   if(el<10){end();continue}
+   const P=[pv.position.x,pv.position.y,pv.position.z],dd=la.rangeSat,u=g.sun,dp=dot(P,u);
+   const lit=!(dp<0&&Math.sqrt(Math.max(0,dot(P,P)-dp*dp))<6371);
+   let mag=99;
+   if(lit){const to=[g.o[0]-P[0],g.o[1]-P[1],g.o[2]-P[2]],b=Math.acos(Math.max(-1,Math.min(1,dot(u,to)/nrm(to)))),f=Math.sin(b)+(Math.PI-b)*Math.cos(b);
+    mag=f>0.01?std-15+5*Math.log10(dd)-2.5*Math.log10(f):99}
+   const m={t:g.t,el,az:la.azimuth/D,mag,lit,dark:g.sa<-6};
+   if(!cur)cur={name:sat.name,star:/STARLINK/i.test(sat.name),inc:sat.rec.inclo/D,nd:sat.rec.nodeo/D,t0:g.t,az0:m.az,peak:m,best:null};
+   cur.t1=g.t+STEP*1000;cur.az1=m.az;if(m.el>cur.peak.el)cur.peak=m;
+   if(ok(m)&&(!cur.best||m.el>cur.best.el))cur.best=m;
+  }
+  end();
+ }
+ let hid=0;for(let q=passes.length-1;q>=0;q--){const c=cloudAt(passes[q].best.t);passes[q].cl=c;if(c!=null&&c>S.thr){passes.splice(q,1);hid++}}CH=hid;
+ passes.sort((a,b)=>a.best.t-b.best.t);
+ const star=passes.filter(p=>p.star),rest=passes.filter(p=>!p.star);
+ for(const p of rest)evs.push({type:'sat',title:p.name+' pass',start:p.t0,end:p.t1,
+  detail:'Rises '+dir(p.az0)+', peaks '+Math.round(p.best.el)+'° in the '+dir(p.best.az)+' at '+fE(p.best.t)+', sets '+dir(p.az1),
+  badges:[['g','Mag ≈ '+(p.best.mag<99?p.best.mag.toFixed(1):'in shadow')],['','Peak '+Math.round(p.best.el)+'°'],...cb(p.cl,p.best.t)]});
+ let i=0;
+ while(i<star.length){let j=i+1,gp=[star[i]];
+  const ad=(a,b)=>Math.abs(((a-b+540)%360)-180),pv=star[j-1],cu=star[j];while(j<star.length&&(()=>{const p=star[j-1],c=star[j];return c.best.t-p.best.t<=S.gap*1000&&ad(c.best.az,p.best.az)<=15&&Math.abs(c.best.el-p.best.el)<=15&&Math.abs(c.inc-p.inc)<=0.5&&ad(c.nd,p.nd)<=2})()){gp.push(star[j]);j++}
+  if(gp.length>=4){const s=Math.min(...gp.map(p=>p.t0)),e=Math.max(...gp.map(p=>p.t1)),b=gp.reduce((a,p)=>p.best.el>a.el?p.best:a,gp[0].best);
+   evs.push({type:'star',title:'Starlink train ('+gp.length+' satellites)',start:s,end:e,detail:'Rises '+dir(gp[0].az0)+', peaks about '+Math.round(b.el)+'° in the '+dir(b.az)+' around '+fE(b.t),
+    badges:[['g','Mag ≈ '+b.mag.toFixed(1)+' (est.)'],['','Train crosses in ~'+Math.round((Math.max(...gp.map(p=>p.best.t))-Math.min(...gp.map(p=>p.best.t)))/1000)+' s'],['','Peak '+Math.round(b.el)+'°'],...cb(cloudAt(b.t),b.t)]})}
+  i=j;
+ }
+ return '';
+}
+function extras(evs,lat,lon){
+ const now=W.a;
+ if(S.types.met)for(let y=new Date(W.a).getFullYear();y<=new Date(W.b).getFullYear();y++)for(const [n,m,d,z] of SH){
+  const s=new Date(y,m,d,22,0).getTime(),e=s+6*3600000;
+  if(e<W.a||s>W.b)continue;
+  const mf=SunCalc.getMoonIllumination(new Date(y,m,d+1,0,0)).fraction,lm=LIM[S.bortle];
+  const b=[['','ZHR ≈ '+z],[mf>0.5?'b':'g','Moon '+Math.round(mf*100)+'% lit']];
+  if(S.tLP)b.push([lm<5?'b':'g','Sky limit mag '+lm]);
+  b.push(...cb(cloudAt(s+4*3600000),s+4*3600000));
+  evs.push({type:'met',title:n+' peak night',start:s,end:e,detail:'Usually peaks around this date (±1 day). Watch after local midnight, away from lights.',badges:b});
+ }
+ if(S.types.moon){const nm=["New Moon","First Quarter","Full Moon","Last Quarter"];let pk=-1;
+  for(let t=W.a;t<=W.b;t+=3600000){const k=Math.floor(SunCalc.getMoonIllumination(new Date(t)).phase*4)%4;if(pk>=0&&k!==pk)evs.push({type:'moon',title:nm[k],start:t,end:t+1800000,detail:'Exact phase time. Dark-sky targets are best around the New Moon.',badges:[]});pk=k}}
+}
+async function astroEv(evs,lat,lon){
+ const A=Astronomy,ob=new A.Observer(lat,lon,0),T=S.types,lim=S.tLP?LIM[S.bortle]+2.3:99;let note='';
+ const hz=(b,t)=>{const q=A.Equator(b,t,ob,true,true),h=A.Horizon(t,ob,q.ra,q.dec,'normal');return{q,alt:h.altitude,az:h.azimuth}};
+ const sep=(a,b)=>{const x=a.ra*15*D,y=b.ra*15*D,p=a.dec*D,r=b.dec*D;return Math.acos(Math.min(1,Math.max(-1,Math.sin(p)*Math.sin(r)+Math.cos(p)*Math.cos(r)*Math.cos(x-y))))/D};
+ const cap=s=>s[0].toUpperCase()+s.slice(1);
+ if(T.ecl){
+  let e=A.SearchLunarEclipse(new Date(W.a));
+  for(let k=0;k<6&&+e.peak.date<=W.b;k++,e=A.NextLunarEclipse(e.peak)){
+   const h=hz(A.Body.Moon,e.peak);if(h.alt<=0)continue;
+   const sd=(e.kind==='penumbral'?e.sd_penum:e.sd_partial)*60000,t=+e.peak.date;
+   evs.push({type:'ecl',title:cap(e.kind)+' lunar eclipse',start:t-sd,end:t+sd,detail:'Greatest eclipse about '+fE(t)+', Moon '+Math.round(h.alt)+'° up in the '+dir(h.az)+'. Safe to watch. 7x50 binoculars show the shadow edge and the colour.'+(e.kind==='penumbral'?' Penumbral eclipses are very subtle.':''),badges:[['g','Safe for binoculars'],...cb(cloudAt(t),t)]})}
+  let s=A.SearchLocalSolarEclipse(new Date(W.a),ob);
+  for(let k=0;k<4&&+s.peak.time.date<=W.b;k++,s=A.NextLocalSolarEclipse(s.peak.time,ob)){
+   if(s.peak.altitude<=0)continue;const t=+s.peak.time.date;
+   evs.push({type:'ecl',title:cap(s.kind)+' solar eclipse',start:+s.partial_begin.time.date,end:+s.partial_end.time.date,detail:'Maximum about '+fE(t)+', Sun '+Math.round(s.peak.altitude)+'° up, about '+Math.round(s.obscuration*100)+'% of the Sun covered. WARNING: never look at the Sun through binoculars unless certified solar filters are fitted over both front lenses. Otherwise use eclipse glasses only.',badges:[['b','Eye danger: filters required'],...cb(cloudAt(t),t)]})}
+ }
+ if(T.conj){
+  const B=[['Mercury',A.Body.Mercury],['Venus',A.Body.Venus],['Mars',A.Body.Mars],['Jupiter',A.Body.Jupiter],['Saturn',A.Body.Saturn]];
+  const STS=[['Regulus',10.139528,11.967,79],['Spica',13.419889,-11.161,250],['Antares',16.490139,-26.432,550],['Aldebaran',4.598667,16.509,65]],SB=[A.Body.Star1,A.Body.Star2,A.Body.Star3,A.Body.Star4];
+  STS.forEach((s,i)=>A.DefineStar(SB[i],s[1],s[2],s[3]));
+  const all=[['Moon',A.Body.Moon,'m'],...B.map(x=>[x[0],x[1],'p']),...STS.map((s,i)=>[s[0],SB[i],'s'])];
+  const end=Math.min(W.b,W.a+180*864e5),best=new Map();let n=0;
+  if(W.b>end)note+='Conjunctions and occultations cover the first 180 days. ';
+  for(let t=Math.ceil(W.a/36e5)*36e5;t<=end;t+=36e5){
+   if(++n%120===0){msg('Searching conjunctions and occultations… '+Math.round((t-W.a)/(end-W.a)*100)+'%');await new Promise(r=>setTimeout(r))}
+   const d=new Date(t);if(S.tSun&&SunCalc.getPosition(d,lat,lon).altitude/D>-4)continue;
+   const P=all.map(a=>({...hz(a[1],d),n:a[0],k:a[2],b:a[1]})).filter(p=>p.alt>5),key=Math.floor((t+lon*240000-43200000)/864e5);
+   for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){const a=P[i],b=P[j];
+    if(a.k!=='m'&&(a.k==='s'||b.k==='s'))continue;
+    const m=a.k==='m',s=sep(a.q,b.q);if(s>(m?(b.k==='s'?2:4):3.5))continue;
+    const kk=a.n+'|'+b.n+'|'+key,o=best.get(kk);if(!o||s<o.s)best.set(kk,{s,t,a,b,m})}
+  }
+  for(const o of best.values()){
+   let{s,t,a,b}=o,tm=t,occ=null;
+   if(o.m&&s<2){let ms=99,tt=t;const run=[];
+    for(let u=t-90*6e4;u<=t+90*6e4;u+=6e4){const dd=new Date(u),mo=A.Equator(A.Body.Moon,dd,ob,true,true),c=A.Equator(b.b,dd,ob,true,true),q=sep(mo,c),r=Math.asin(1737.4/(mo.dist*149597870.7))/D;if(q<ms){ms=q;tt=u}if(q<r+0.003)run.push(u)}
+    s=ms;tm=tt;if(run.length)occ=[run[0],run[run.length-1]+6e4]}
+   const dt=new Date(tm),mg=[a,b].filter(x=>x.k==='p').map(x=>A.Illumination(x.b,dt).mag);
+   if(mg.some(v=>v>lim))continue;
+   const hb=hz(b.b,dt);if(hb.alt<=0)continue;
+   const bd=[...(mg.length?[['','Mag '+mg.map(v=>v.toFixed(1)).join(' / ')]]:[]),...cb(cloudAt(tm),tm)];
+   if(occ)evs.push({type:'conj',title:'Moon occults '+b.n,start:occ[0],end:occ[1],detail:'The Moon covers '+b.n+' from about '+fE(occ[0])+' to '+fE(occ[1])+' as seen from your location. '+b.n+' is '+Math.round(hb.alt)+'° up in the '+dir(hb.az)+'.',badges:[['g','Occultation'],['g','Fits a 7x50 view'],...bd]});
+   else evs.push({type:'conj',title:a.n+' and '+b.n+(o.m?' close approach':' conjunction'),start:tm-18e5,end:tm+18e5,detail:'Closest about '+fE(tm)+'. '+b.n+' is '+Math.round(hb.alt)+'° up in the '+dir(hb.az)+'.',badges:[['g',s.toFixed(1)+'° apart'],[s<=3.5?'g':'',s<=3.5?'Fits a 7x50 view':'Wider than a 7x50 view'],...bd]});
+  }
+ }
+ return note;
+}
+async function run(){
+ read();const lat=parseFloat(S.lat),lon=parseFloat(S.lon);
+ if(!(lat>=-90&&lat<=90&&lon>=-180&&lon<=180))return msg('Enter a valid latitude (−90 to 90) and longitude (−180 to 180), or use your current location.');
+ $('#go').disabled=true;$('#out').innerHTML='';msg('Calculating…');
+ const a=Math.max(new Date(S.d0+'T00:00:00').getTime(),Date.now()),b=Math.min(NIGHT?new Date(S.d1+'T00:00:00').getTime()+30*36e5:new Date(S.d1+'T23:59:59').getTime(),a+365*864e5);
+ if(!(b>a)){$('#go').disabled=false;return msg('Choose a valid date range: the end date must be today or later, and after the start date.')}
+ W={a,b};const evs=[];let note='';CL=null;CH=0;
+ if(S.tCloud){try{const c=new AbortController(),to=setTimeout(()=>c.abort(),12000);msg('Fetching cloud forecast…');
+  const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&hourly=cloud_cover&forecast_days=16&timezone=GMT',{signal:c.signal});clearTimeout(to);
+  if(!r.ok)throw 0;const j=await r.json();CL={t0:Date.parse(j.hourly.time[0]+'Z'),v:j.hourly.cloud_cover};note+='Cloud: live hourly forecast (Open-Meteo). '}
+  catch(e){note+='Live cloud forecast is blocked or unavailable in this view, so your manual cloud value was used. '}}
+ if(b-a>7*864e5)note+='Satellite passes cover the first 7 days only. ';
+ try{note+=await sats(evs,lat,lon);extras(evs,lat,lon);note+=await astroEv(evs,lat,lon);if(CH)note+=' '+CH+' satellite pass(es) hidden by cloud.'}catch(e){note+='Something went wrong: '+e.message}
+ evs.sort((a,b)=>a.start-b.start);EV=evs;render();
+ $('#srcs').textContent='Data sources – Cloud: '+(S.tCloud?(CL?'web forecast (Open-Meteo)':'manual value, no web forecast'):'filter off')+'. Light pollution: '+(S.tLP?(BSRC==='preset'?'city preset estimate, not web-fetched':'manual Bortle class'):'filter off')+'. Orbits: '+(S.tle.trim()?'TLE you pasted':'none')+'. Sun, Moon, planets, eclipses and passes: calculated on your device. Meteor peak dates: built-in table.';
+ msg((evs.length?evs.length+' events found. ':'No events match your filters. ')+note);$('#go').disabled=false;
+}
+const iso=t=>new Date(t).toISOString().replace(/[-:]|\.\d{3}/g,'');
+function loc(){return (+S.lat).toFixed(4)+','+(+S.lon).toFixed(4)}
+function gcal(e){return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(e.title)+'&dates='+iso(e.start)+'/'+iso(e.end)+'&details='+encodeURIComponent(e.detail+' (Skywatch)')+'&location='+encodeURIComponent(loc())}
+function ics(e,i){const x=s=>s.replace(/\\/g,'\\\\').replace(/[,;]/g,'\\$&').replace(/\n/g,'\\n');
+ return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Skywatch//EN','BEGIN:VEVENT','UID:sky'+e.start+'-'+i+'@skywatch','DTSTAMP:'+iso(Date.now()),'DTSTART:'+iso(e.start),'DTEND:'+iso(e.end),'SUMMARY:'+x(e.title),'DESCRIPTION:'+x(e.detail),'LOCATION:'+x(loc()),'END:VEVENT','END:VCALENDAR'].join('\r\n')}
+function render(){
+ $('#out').innerHTML=EV.map((e,i)=>'<section class="ev '+e.type+'"><h3>'+esc(e.title)+'</h3><div class="when">'+fT(e.start)+(e.type==='moon'?'':' – '+fE(e.end))+'</div>'+e.badges.map(b=>'<span class="bd '+b[0]+'">'+esc(b[1])+'</span>').join('')+'<div>'+esc(e.detail)+'</div><div class="act"><a class="btn" target="_blank" rel="noopener" href="'+gcal(e)+'">Add to Google Calendar</a><button data-i="'+i+'">Copy .ics</button></div></section>').join('');
+ $('#bulk').hidden=!EV.length;
+}
+$('#out').onclick=async ev=>{const b=ev.target.closest('button[data-i]');if(!b)return;const t=ics(EV[+b.dataset.i],b.dataset.i);
+ try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(_){}a.remove()}
+ b.textContent='Copied – paste into a .ics file';setTimeout(()=>b.textContent='Copy .ics',2500)};
+$('#csv').onclick=async()=>{
+ const dl=await (window.claude&&claude.use?claude.use('downloads'):null);
+ if(!dl)return msg('Downloads are not available here. Use the per-event calendar links.');
+ const d=t=>{const x=new Date(t);return[(x.getMonth()+1)+'/'+x.getDate()+'/'+x.getFullYear(),x.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})]},q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+ const rows=['Subject,Start Date,Start Time,End Date,End Time,All Day Event,Description,Location'];
+ for(const e of EV){const a=d(e.start),b=d(e.end);rows.push([q(e.title),a[0],a[1],b[0],b[1],'False',q(e.detail),q(loc())].join(','))}
+ try{await dl.save({filename:'skywatch-events.csv',data:rows.join('\n')})}catch(e){if(e.code!=='declined')msg('Could not save the file.')}
+};
+let NIGHT=false;
+function lm(t){$('#locmsg').textContent=t}
+const CITIES=[['Bengaluru',12.9716,77.5946,8,''],['Palakunnu (Udma, Kasaragod)',12.444,75.024,5,'Coordinates are approximate (web-sourced Udma town position).'],['Trivandrum',8.5241,76.9366,7,'']];
+CITIES.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c[0];$('#city').appendChild(o)});
+$('#city').onchange=e=>{const c=CITIES[e.target.value];if(!c)return;$('#lat').value=c[1];$('#lon').value=c[2];$('#bortle').value=c[3];BSRC='preset';$('#bsrc').textContent='preset estimate';read();lm('Location set to '+c[0]+'. Light pollution preset to Bortle '+c[3]+' (an estimate, not web-fetched; check it on lightpollutionmap.info). '+c[4])};
+$('#bortle').addEventListener('input',()=>{BSRC='manual';$('#bsrc').textContent='manual'});
+$('#paste').addEventListener('input',e=>{const m=e.target.value.match(/(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)/);if(!m)return;const a=+m[1],o=+m[2];if(a<-90||a>90||o<-180||o>180)return lm('Those numbers are out of range. Latitude is −90 to 90, longitude −180 to 180.');$('#lat').value=a;$('#lon').value=o;read();lm('Coordinates set.')});
+['#d0','#d1'].forEach(s=>$(s).addEventListener('input',()=>{NIGHT=false;document.querySelectorAll('[data-q]').forEach(x=>x.style.outline='')}));
+document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=new Date(),q=b.dataset.q,f=x=>x.toLocaleDateString('sv');let e=new Date(t);NIGHT=q==='night';
+ if(q==='week')e.setDate(t.getDate()+((7-t.getDay())%7));else if(q==='month')e=new Date(t.getFullYear(),t.getMonth()+1,0);else if(q==='7')e.setDate(t.getDate()+6);
+ $('#d0').value=f(t);$('#d1').value=f(e);read();document.querySelectorAll('[data-q]').forEach(x=>x.style.outline=x===b?'2px solid var(--ac)':'')});
+S.col=S.col||{};
+document.querySelectorAll('#side section').forEach((sec,i)=>{const h=sec.querySelector('h2');if(!h)return;
+ const body=document.createElement('div');body.id='sec'+i;[...sec.childNodes].forEach(n=>{if(n!==h)body.appendChild(n)});sec.appendChild(body);
+ const t=h.textContent,b=document.createElement('button'),a=document.createElement('span'),c=document.createElement('span');b.type='button';b.className='ch';b.setAttribute('aria-controls',body.id);a.textContent=t;b.append(a,c);h.textContent='';h.appendChild(b);
+ const set=x=>{body.hidden=x;b.setAttribute('aria-expanded',String(!x));c.textContent=x?'Open ▸':'Close ▾';S.col[i]=x;save()};
+ b.onclick=()=>set(!body.hidden);set(!!S.col[i])});
+$('#go').onclick=run;init();
+</script></body></html>
